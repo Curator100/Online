@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Online Tuition Hub</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#25D366">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tuition Hub">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root {
+    --wa-green-dark: #25D366;
+    --wa-green: #25D366;
+    --wa-green-light: #DCF8C6;
+    --wa-bg: #ECE5DD;
+    --wa-white: #ffffff;
+    --wa-text: #111b21;
+    --wa-muted: #667781;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--wa-bg);
+  }
+
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--wa-white);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0,0,0,0.15);
+  }
+
+  /* ---------- LOGIN SCREEN ---------- */
+  .login-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--wa-white);
+  }
+
+  .login-header {
+    background: var(--wa-green-dark);
+    color: white;
+    padding: 28px 20px 36px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .login-header .logo-circle {
+    width: 72px;
+    height: 72px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+    font-size: 34px;
+  }
+
+  .login-header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .login-header p {
+    font-size: 13px;
+    opacity: 0.85;
+    margin-top: 6px;
+  }
+
+  .login-body {
+    flex: 1;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .field-group label {
+    display: block;
+    font-size: 13px;
+    color: var(--wa-muted);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .field-group input {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1.5px solid #d1d7db;
+    border-radius: 10px;
+    font-size: 16px;
+    outline: none;
+    background: #fafafa;
+    color: var(--wa-text);
+    transition: border-color 0.15s;
+  }
+
+  .field-group input:focus {
+    border-color: var(--wa-green);
+    background: white;
+  }
+
+  .login-btn {
+    margin-top: 8px;
+    padding: 14px;
+    background: var(--wa-green);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .login-btn:active { background: var(--wa-green-dark); }
+  .login-btn:disabled { background: #a8c4bf; cursor: not-allowed; }
+
+  .error-msg {
+    color: #d32f2f;
+    font-size: 13.5px;
+    text-align: center;
+    min-height: 18px;
+    font-weight: 500;
+  }
+
+  .login-footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 12px;
+    color: var(--wa-muted);
+    flex-shrink: 0;
+  }
+
+  /* ---------- CHAT / MAIN SCREEN ---------- */
+  .main-screen {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .top-bar {
+    background: var(--wa-green-dark);
+    color: white;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .top-bar .title-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .top-bar .avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .top-bar h2 {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .top-bar .sub {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+
+  .logout-btn {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .content-area {
+    flex: 1;
+    background: white;
+    overflow-y: auto;
+  }
+
+  /* ---------- CONTACT LIST ---------- */
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .contact-item:active { background: #f5f5f5; }
+
+  .contact-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--wa-green);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .contact-info h3 {
+    font-size: 16px;
+    color: var(--wa-text);
+    font-weight: 500;
+  }
+
+  .contact-info p {
+    font-size: 13px;
+    color: var(--wa-muted);
+    margin-top: 2px;
+  }
+
+  /* ---------- CHAT SCREEN ---------- */
+  .chat-screen {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .chat-top-bar {
+    background: var(--wa-green-dark);
+    color: white;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .back-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px 4px 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .chat-top-bar .contact-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .chat-top-bar h3 {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 10px;
+    background: var(--wa-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .msg-bubble {
+    max-width: 75%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14.5px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    box-shadow: 0 1px 0.5px rgba(0,0,0,0.1);
+    position: relative;
+  }
+
+  .msg-bubble.sent {
+    align-self: flex-end;
+    background: #DCF8C6;
+    border-top-right-radius: 2px;
+    cursor: pointer;
+  }
+
+  .msg-bubble.received {
+    align-self: flex-start;
+    background: white;
+    border-top-left-radius: 2px;
+  }
+
+  .msg-bubble.deleted .msg-body {
+    font-style: italic;
+    color: var(--wa-muted);
+  }
+
+  .msg-edited-tag {
+    font-size: 10px;
+    color: var(--wa-muted);
+    margin-left: 4px;
+  }
+
+  .msg-time {
+    font-size: 10.5px;
+    color: var(--wa-muted);
+    margin-top: 3px;
+    text-align: right;
+  }
+
+  .msg-edit-input {
+    width: 100%;
+    min-width: 160px;
+    border: 1px solid var(--wa-green);
+    border-radius: 6px;
+    padding: 5px 7px;
+    font-size: 14.5px;
+    font-family: inherit;
+    resize: none;
+  }
+
+  .msg-edit-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    margin-top: 5px;
+  }
+
+  .msg-edit-actions button {
+    border: none;
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .msg-edit-actions .save-btn {
+    background: var(--wa-green-dark);
+    color: #fff;
+  }
+
+  .msg-edit-actions .cancel-btn {
+    background: #e2e2e2;
+    color: var(--wa-text);
+  }
+
+  /* ---------- message action sheet ---------- */
+  .msg-action-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 300;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .msg-action-overlay.show { display: flex; }
+  .msg-action-sheet {
+    background: #fff;
+    width: 100%;
+    max-width: 480px;
+    border-radius: 14px 14px 0 0;
+    overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .msg-action-sheet button {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    border-bottom: 1px solid #eee;
+    padding: 16px;
+    font-size: 15px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--wa-text);
+  }
+  .msg-action-sheet button.danger { color: #d32f2f; }
+  .msg-action-sheet button:last-child { border-bottom: none; color: var(--wa-muted); }
+
+  .chat-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #f0f0f0;
+    flex-shrink: 0;
+  }
+
+  .chat-input-bar input {
+    flex: 1;
+    border: none;
+    border-radius: 20px;
+    padding: 11px 16px;
+    font-size: 15px;
+    outline: none;
+  }
+
+  .send-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--wa-green);
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .send-btn:disabled { background: #a8c4bf; }
+
+  .empty-state {
+    text-align: center;
+    color: var(--wa-muted);
+    font-size: 13px;
+    padding: 30px 20px;
+  }
+
+  /* ---------- INSTALL BANNER (sticky, until installed) ---------- */
+  .install-banner {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: var(--wa-green);
+    color: #fff;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    position: relative;
+    z-index: 50;
+    flex-shrink: 0;
+  }
+  .install-banner.show { display: flex; }
+  .install-banner .ib-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .install-banner .ib-text {
+    flex: 1;
+    line-height: 1.25;
+  }
+  .install-banner .ib-text strong { display: block; font-size: 14px; }
+  .install-banner button.ib-install {
+    background: #fff;
+    color: var(--wa-green-dark);
+    border: none;
+    padding: 7px 14px;
+    border-radius: 18px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .install-banner button.ib-close {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 2px;
+    opacity: 0.85;
+  }
+
+  /* ---------- INSTALL MODAL (pops up after login) ---------- */
+  .install-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .install-modal-overlay.show { display: flex; }
+  .install-modal {
+    background: #fff;
+    border-radius: 16px;
+    max-width: 340px;
+    width: 100%;
+    padding: 28px 22px 22px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  }
+  .install-modal .im-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    margin: 0 auto 14px;
+    display: block;
+  }
+  .install-modal h3 {
+    font-size: 18px;
+    color: var(--wa-text);
+    margin-bottom: 8px;
+  }
+  .install-modal p {
+    font-size: 13.5px;
+    color: var(--wa-muted);
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+  .install-modal .im-steps {
+    text-align: left;
+    background: var(--wa-bg);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--wa-text);
+    margin-bottom: 18px;
+    line-height: 1.6;
+  }
+  .install-modal button.im-install {
+    width: 100%;
+    background: var(--wa-green-dark);
+    color: #fff;
+    border: none;
+    padding: 13px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  .install-modal button.im-later {
+    width: 100%;
+    background: transparent;
+    color: var(--wa-muted);
+    border: none;
+    padding: 8px;
+    font-size: 13.5px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- INSTALL BANNER: stays visible on every screen until the app is installed -->
+  <div class="install-banner" id="installBanner">
+    <img src="/icon-192.png" class="ib-icon" alt="">
+    <div class="ib-text"><strong>Install this app</strong>Add it to your home screen for quick access</div>
+    <button class="ib-install" id="installBannerBtn" onclick="triggerInstall()">Install</button>
+    <button class="ib-close" onclick="dismissBanner()" aria-label="Dismiss">&times;</button>
+  </div>
+
+  <!-- LOGIN SCREEN -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-header">
+      <div class="logo-circle">💬</div>
+      <h1>Online Tuition Hub</h1>
+      <p>Log in with your phone number</p>
+    </div>
+
+    <div class="login-body">
+      <div class="field-group">
+        <label for="phoneInput">Phone number</label>
+        <input type="tel" id="phoneInput" placeholder="01XXXXXXXXX" autocomplete="off" inputmode="numeric">
+      </div>
+
+      <div class="field-group">
+        <label for="passwordInput">Password</label>
+        <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <button class="login-btn" id="loginBtn" onclick="handleLogin()">Log In</button>
+    </div>
+
+    <div class="login-footer">Online Tuition Hub</div>
+  </div>
+
+  <!-- MAIN SCREEN (blank white page after login) -->
+  <div class="main-screen" id="mainScreen">
+    <div class="top-bar">
+      <div class="title-block">
+        <div class="avatar" id="avatarInitial">?</div>
+        <div>
+          <h2>Online Tuition Hub</h2>
+          <div class="sub" id="loggedInAs"></div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">Log out</button>
+    </div>
+
+    <div class="content-area" id="contentArea">
+      <div class="empty-state" id="contactsEmpty" style="display:none;">Loading contact...</div>
+    </div>
+  </div>
+
+  <!-- CHAT SCREEN -->
+  <div class="chat-screen" id="chatScreen">
+    <div class="chat-top-bar">
+      <button class="back-btn" onclick="closeChat()">←</button>
+      <div class="contact-avatar" id="chatAvatar">?</div>
+      <h3 id="chatContactName"></h3>
+    </div>
+
+    <div class="chat-messages" id="chatMessages"></div>
+
+    <div class="chat-input-bar">
+      <input type="text" id="messageInput" placeholder="Type a message" autocomplete="off">
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+    </div>
+
+    <!-- Action sheet shown when tapping your own sent message -->
+    <div class="msg-action-overlay" id="msgActionOverlay" onclick="if(event.target===this) closeMsgActions()">
+      <div class="msg-action-sheet">
+        <button onclick="startEditMessage()">Edit message</button>
+        <button class="danger" onclick="deleteMessage()">Delete message</button>
+        <button onclick="closeMsgActions()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSTALL MODAL: pops up in the middle of the screen right after login -->
+  <div class="install-modal-overlay" id="installModalOverlay">
+    <div class="install-modal">
+      <img src="/icon-192.png" class="im-icon" alt="">
+      <h3>Install Online Tuition Hub</h3>
+      <p id="installModalText">Add this app to your home screen so it opens instantly, full-screen, like a real app.</p>
+      <div class="im-steps" id="installModalSteps" style="display:none;"></div>
+      <button class="im-install" id="installModalBtn" onclick="triggerInstall()">Install App</button>
+      <button class="im-later" onclick="closeInstallModal()">Maybe later</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://fxkmanginfisqzmjomji.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_Np8s4CNKWmtt-G1j2RgAZQ_6UAVkqYm';
+
+  if (typeof supabase === 'undefined') {
+    document.body.innerHTML = '<div style="padding:24px;font-family:sans-serif;color:#d32f2f;text-align:center;">Could not load required library. Please check your internet connection and reload the page.</div>';
+    throw new Error('Supabase library failed to load from CDN.');
+  }
+
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ---------- PUSH NOTIFICATIONS ---------- */
+  const VAPID_PUBLIC_KEY = 'BAJj5MTUq41Ha548RoPUnSG0rqMCc0PHU94OG-hhTK0n1ViuleGk5_3yJdmL7L8kUypiql5A99-yLzighZwWUEc';
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; i++) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  // Subscribes this device to Web Push and saves the subscription so the
+  // server can notify this user when they receive a new message. Silently
+  // no-ops if the browser doesn't support push or the user denies
+  // permission — chat still works fine without it either way.
+  async function subscribeToPush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (!currentUserId) return;
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+
+      const registration = await navigator.serviceWorker.ready;
+      let subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+      }
+
+      const subJson = subscription.toJSON();
+
+      await supabaseClient
+        .from('tuitionhub_push_subscriptions')
+        .upsert({
+          user_id: currentUserId,
+          phone: currentPhone,
+          endpoint: subJson.endpoint,
+          subscription: subJson
+        }, { onConflict: 'user_id' });
+    } catch (err) {
+      console.warn('Push subscription failed:', err);
+    }
+  }
+
+  // Removes this device's push subscription — called on logout so a shared
+  // device doesn't keep getting notifications for an account that signed out.
+  async function unsubscribeFromPush() {
+    try {
+      if (!('serviceWorker' in navigator)) return;
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) return;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        if (currentUserId) {
+          await supabaseClient
+            .from('tuitionhub_push_subscriptions')
+            .delete()
+            .eq('user_id', currentUserId);
+        }
+        await subscription.unsubscribe();
+      }
+    } catch (err) {
+      console.warn('Push unsubscribe failed:', err);
+    }
+  }
+
+  /* ---------- INSTALL PROMPT LOGIC ---------- */
+  let deferredInstallPrompt = null;
+  let appIsInstalled = false;
+  let modalShownThisLoad = false;
+
+  const installBanner = document.getElementById('installBanner');
+  const installModalOverlay = document.getElementById('installModalOverlay');
+  const installModalSteps = document.getElementById('installModalSteps');
+  const installModalText = document.getElementById('installModalText');
+  const installModalBtn = document.getElementById('installModalBtn');
+
+  function isStandaloneMode() {
+    return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true; // iOS Safari flag
+  }
+
+  function isIOS() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  // Capture Chrome/Android's native install prompt as soon as it's available
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    refreshInstallUI();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    appIsInstalled = true;
+    deferredInstallPrompt = null;
+    hideAllInstallUI();
+  });
+
+  function refreshInstallUI() {
+    appIsInstalled = isStandaloneMode();
+    if (appIsInstalled) {
+      hideAllInstallUI();
+      return;
+    }
+    // Show the sticky banner on every screen until installed
+    installBanner.classList.add('show');
+    if (isIOS() && !deferredInstallPrompt) {
+      // No native prompt on iOS — the button text nudges toward Share menu instead
+      document.getElementById('installBannerBtn').textContent = 'How?';
+    }
+  }
+
+  function hideAllInstallUI() {
+    installBanner.classList.remove('show');
+    closeInstallModal();
+  }
+
+  function dismissBanner() {
+    installBanner.classList.remove('show');
+    sessionStorage.setItem('installBannerDismissed', '1');
+  }
+
+  function showInstallModalIfNeeded() {
+    if (appIsInstalled || isStandaloneMode() || modalShownThisLoad) return;
+    modalShownThisLoad = true;
+
+    if (isIOS() && !deferredInstallPrompt) {
+      installModalText.textContent = 'Add this app to your home screen so it opens instantly, full-screen, like a real app.';
+      installModalSteps.style.display = 'block';
+      installModalSteps.innerHTML = '1. Tap the <strong>Share</strong> icon (square with an arrow) in Safari\'s toolbar<br>2. Scroll down and tap <strong>"Add to Home Screen"</strong><br>3. Tap <strong>"Add"</strong> in the top right';
+      installModalBtn.textContent = 'Got it';
+      installModalBtn.onclick = closeInstallModal;
+    } else {
+      installModalSteps.style.display = 'none';
+      installModalText.textContent = 'Add this app to your home screen so it opens instantly, full-screen, like a real app.';
+      installModalBtn.textContent = 'Install App';
+      installModalBtn.onclick = triggerInstall;
+    }
+
+    installModalOverlay.classList.add('show');
+  }
+
+  function closeInstallModal() {
+    installModalOverlay.classList.remove('show');
+  }
+
+  async function triggerInstall() {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      if (outcome === 'accepted') {
+        hideAllInstallUI();
+      }
+      return;
+    }
+    // No native prompt available (iOS, or already dismissed once) — show manual steps
+    installModalText.textContent = isIOS()
+      ? 'Add this app to your home screen so it opens instantly, full-screen, like a real app.'
+      : 'Open your browser menu and choose "Install app" or "Add to Home screen".';
+    installModalSteps.style.display = 'block';
+    installModalSteps.innerHTML = isIOS()
+      ? '1. Tap the <strong>Share</strong> icon (square with an arrow) in Safari\'s toolbar<br>2. Scroll down and tap <strong>"Add to Home Screen"</strong><br>3. Tap <strong>"Add"</strong> in the top right'
+      : '1. Tap the <strong>⋮</strong> menu in the top right of your browser<br>2. Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>';
+    installModalBtn.textContent = 'Got it';
+    installModalBtn.onclick = closeInstallModal;
+    installModalOverlay.classList.add('show');
+  }
+
+  // Initial check on page load
+  refreshInstallUI();
+  if (sessionStorage.getItem('installBannerDismissed') === '1' && !appIsInstalled) {
+    installBanner.classList.remove('show');
+  }
+
+  const loginScreen = document.getElementById('loginScreen');
+  const mainScreen = document.getElementById('mainScreen');
+  const errorMsg = document.getElementById('errorMsg');
+  const loginBtn = document.getElementById('loginBtn');
+  const phoneInput = document.getElementById('phoneInput');
+  const passwordInput = document.getElementById('passwordInput');
+
+  function phoneToEmail(phone) {
+    return phone.trim() + '@tuitionhub.local';
+  }
+
+  const CREDS_KEY = 'tuitionhub_saved_creds';
+
+  function saveCreds(phone, password) {
+    localStorage.setItem(CREDS_KEY, JSON.stringify({ phone, password }));
+  }
+
+  function getSavedCreds() {
+    try {
+      const raw = localStorage.getItem(CREDS_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function clearSavedCreds() {
+    localStorage.removeItem(CREDS_KEY);
+  }
+
+  async function handleLogin() {
+    errorMsg.textContent = '';
+    const phone = phoneInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!phone || !password) {
+      errorMsg.textContent = 'Please enter both phone number and password.';
+      return;
+    }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Logging in...';
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: phoneToEmail(phone),
+      password: password
+    });
+
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Log In';
+
+    if (error) {
+      errorMsg.textContent = 'Invalid phone number or password.';
+      return;
+    }
+
+    saveCreds(phone, password);
+    showMainScreen(phone);
+  }
+
+  const PHONE_NAMES = {
+    '01776588965': 'Anika',
+    '01712524912': 'Rahat',
+    '01633410212': 'Student 23'
+  };
+  let currentUserId = null;
+  let currentPhone = null;
+  let otherUserId = null;
+  let otherPhone = null;
+  let realtimeChannel = null;
+  // Bumped every time a chat is opened or closed. loadMessages() captures
+  // this at the start of its fetch and checks it again once the fetch
+  // resolves — if it changed in between (chat switched/closed), the stale
+  // response is discarded instead of overwriting newer state.
+  let chatSession = 0;
+
+  function nameForPhone(phone) {
+    return PHONE_NAMES[phone] || phone;
+  }
+
+  function initialsFor(phone) {
+    const name = nameForPhone(phone);
+    return name.slice(0, 2).toUpperCase();
+  }
+
+  function emailToPhone(email) {
+    return email.replace('@tuitionhub.local', '');
+  }
+
+  async function showMainScreen(phone) {
+    loginScreen.style.display = 'none';
+    mainScreen.style.display = 'flex';
+    showInstallModalIfNeeded();
+    currentPhone = phone;
+    document.getElementById('loggedInAs').textContent = nameForPhone(phone);
+    document.getElementById('avatarInitial').textContent = initialsFor(phone);
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    currentUserId = session.user.id;
+
+    await loadContacts();
+    subscribeToPush();
+  }
+
+  // Every account's allowed contacts are whatever rows exist for them in
+  // tuitionhub_contact_pairs. This supports any number of contacts per user
+  // (not just a fixed pair) and is what actually enforces "who can message
+  // whom" together with the DB insert policy.
+  async function loadContacts() {
+    const contentArea = document.getElementById('contentArea');
+    contentArea.innerHTML = '<div class="empty-state">Loading contacts...</div>';
+
+    const { data: pairs, error: pairsError } = await supabaseClient
+      .from('tuitionhub_contact_pairs')
+      .select('contact_id')
+      .eq('user_id', currentUserId);
+
+    if (pairsError) {
+      contentArea.innerHTML = '<div class="empty-state">Could not load contacts. Please refresh.</div>';
+      return;
+    }
+
+    if (!pairs || pairs.length === 0) {
+      contentArea.innerHTML = '<div class="empty-state">No contacts yet.</div>';
+      return;
+    }
+
+    const contactIds = pairs.map(p => p.contact_id);
+    const { data: contacts, error: contactsError } = await supabaseClient
+      .from('tuitionhub_contacts')
+      .select('id, phone')
+      .in('id', contactIds);
+
+    if (contactsError || !contacts || contacts.length === 0) {
+      contentArea.innerHTML = '<div class="empty-state">Could not load contacts. Please refresh.</div>';
+      return;
+    }
+
+    contentArea.innerHTML = contacts.map(c => `
+      <div class="contact-item" onclick="openChat('${c.phone}', '${c.id}')">
+        <div class="contact-avatar">${initialsFor(c.phone)}</div>
+        <div class="contact-info">
+          <h3>${nameForPhone(c.phone)}</h3>
+          <p>Tap to chat</p>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function openChat(phone, id) {
+    otherPhone = phone;
+    otherUserId = id;
+    chatSession++;
+    const mySession = chatSession;
+
+    document.getElementById('mainScreen').style.display = 'none';
+    document.getElementById('chatScreen').style.display = 'flex';
+    document.getElementById('chatContactName').textContent = nameForPhone(otherPhone);
+    document.getElementById('chatAvatar').textContent = initialsFor(otherPhone);
+    document.getElementById('chatMessages').innerHTML = '<div class="empty-state">Loading messages...</div>';
+    Object.keys(messagesCache).forEach((k) => delete messagesCache[k]);
+
+    // Subscribe BEFORE fetching history. If this stays in the other order,
+    // a message sent while the history fetch is still in flight (very easy
+    // to hit on a cold PWA start) has no live channel to echo through, and
+    // then gets wiped when the stale fetch resolves and clears the screen.
+    subscribeToMessages();
+    await loadMessages(mySession);
+  }
+
+  function closeChat() {
+    chatSession++; // invalidates any loadMessages() call still in flight
+    document.getElementById('chatScreen').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'flex';
+    if (realtimeChannel) {
+      supabaseClient.removeChannel(realtimeChannel);
+      realtimeChannel = null;
+    }
+  }
+
+  function renderMessage(msg) {
+    // Safe to call twice for the same message (e.g. once optimistically on
+    // send, once again when the realtime echo arrives) — just update in place
+    // instead of drawing a duplicate bubble.
+    const existing = findMessageById(msg.id);
+    if (existing) {
+      messagesCache[msg.id] = msg;
+      existing.classList.toggle('deleted', !!msg.deleted_at);
+      fillMessageBubble(existing, msg);
+      const isSent = msg.sender_id === currentUserId;
+      existing.onclick = (isSent && !msg.deleted_at) ? () => openMsgActions(msg.id) : null;
+      return;
+    }
+
+    const container = document.getElementById('chatMessages');
+    const emptyState = container.querySelector('.empty-state');
+    if (emptyState) container.innerHTML = '';
+
+    const isSent = msg.sender_id === currentUserId;
+    const div = document.createElement('div');
+    div.className = 'msg-bubble ' + (isSent ? 'sent' : 'received') + (msg.deleted_at ? ' deleted' : '');
+    div.dataset.id = msg.id;
+    div.dataset.sender = msg.sender_id;
+    fillMessageBubble(div, msg);
+    if (isSent) {
+      div.onclick = () => openMsgActions(msg.id);
+    }
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function fillMessageBubble(div, msg) {
+    const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const editedTag = (msg.edited_at && !msg.deleted_at) ? '<span class="msg-edited-tag">(edited)</span>' : '';
+    const bodyText = msg.deleted_at ? 'This message was deleted' : escapeHtml(msg.body);
+    div.innerHTML = '<span class="msg-body">' + bodyText + '</span>' + editedTag
+      + '<div class="msg-time">' + time + '</div>';
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function findMessageById(id) {
+    return document.querySelector('.msg-bubble[data-id="' + id + '"]');
+  }
+
+  /* ---------- edit / delete own messages ---------- */
+  let activeMsgActionId = null;
+  const msgActionOverlay = document.getElementById('msgActionOverlay');
+  const messagesCache = {}; // id -> latest msg object, kept in sync for editing
+
+  function openMsgActions(id) {
+    const msg = messagesCache[id];
+    if (!msg || msg.deleted_at) return; // can't act on an already-deleted message
+    activeMsgActionId = id;
+    msgActionOverlay.classList.add('show');
+  }
+
+  function closeMsgActions() {
+    msgActionOverlay.classList.remove('show');
+    activeMsgActionId = null;
+  }
+
+  function startEditMessage() {
+    const id = activeMsgActionId;
+    closeMsgActions();
+    if (!id) return;
+    const msg = messagesCache[id];
+    const div = findMessageById(id);
+    if (!msg || !div) return;
+
+    div.innerHTML =
+      '<textarea class="msg-edit-input" id="editInput_' + id + '" rows="2">' + msg.body.replace(/</g, '&lt;') + '</textarea>' +
+      '<div class="msg-edit-actions">' +
+      '<button class="cancel-btn" onclick="cancelEditMessage(\'' + id + '\')">Cancel</button>' +
+      '<button class="save-btn" onclick="saveEditMessage(\'' + id + '\')">Save</button>' +
+      '</div>';
+    div.onclick = null;
+    const ta = document.getElementById('editInput_' + id);
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+  }
+
+  function cancelEditMessage(id) {
+    const msg = messagesCache[id];
+    const div = findMessageById(id);
+    if (!msg || !div) return;
+    fillMessageBubble(div, msg);
+    div.onclick = () => openMsgActions(id);
+  }
+
+  async function saveEditMessage(id) {
+    const ta = document.getElementById('editInput_' + id);
+    const newBody = ta ? ta.value.trim() : '';
+    if (!newBody) return;
+
+    const { data, error } = await supabaseClient
+      .from('tuitionhub_messages')
+      .update({ body: newBody, edited_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      alert('Could not save the edit. Please try again.');
+      return;
+    }
+
+    if (data) {
+      messagesCache[id] = data;
+      const div = findMessageById(id);
+      if (div) {
+        fillMessageBubble(div, data);
+        div.onclick = () => openMsgActions(id);
+      }
+    }
+  }
+
+  async function deleteMessage() {
+    const id = activeMsgActionId;
+    closeMsgActions();
+    if (!id) return;
+    if (!confirm('Delete this message? This cannot be undone.')) return;
+
+    const { data, error } = await supabaseClient
+      .from('tuitionhub_messages')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      alert('Could not delete the message. Please try again.');
+      return;
+    }
+
+    if (data) {
+      messagesCache[id] = data;
+      const div = findMessageById(id);
+      if (div) {
+        div.classList.add('deleted');
+        fillMessageBubble(div, data);
+        div.onclick = null;
+      }
+    }
+  }
+
+  async function loadMessages(mySession) {
+    const container = document.getElementById('chatMessages');
+
+    const { data, error } = await supabaseClient
+      .from('tuitionhub_messages')
+      .select('*')
+      .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`)
+      .order('created_at', { ascending: true });
+
+    // The user switched or closed the chat while this fetch was in flight.
+    // Discard the result instead of painting a now-irrelevant conversation
+    // (or worse, wiping messages sent/received since this fetch started).
+    if (mySession !== chatSession) return;
+
+    if (error) {
+      if (Object.keys(messagesCache).length === 0) {
+        container.innerHTML = '<div class="empty-state">Could not load messages.</div>';
+      }
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      if (Object.keys(messagesCache).length === 0) {
+        container.innerHTML = '<div class="empty-state">No messages yet. Say hello!</div>';
+      }
+      return;
+    }
+
+    // Merge rather than replace: renderMessage() is safe to call for a
+    // message already on screen (sent optimistically, or received via the
+    // realtime channel while this fetch was still running) — it just
+    // updates that bubble in place instead of duplicating it.
+    const emptyState = container.querySelector('.empty-state');
+    if (emptyState) container.innerHTML = '';
+    data.forEach((msg) => {
+      messagesCache[msg.id] = msg;
+      renderMessage(msg);
+    });
+
+    // A realtime message that arrived mid-fetch may have been appended out
+    // of order relative to this batch — re-sort the DOM by created_at.
+    const bubbles = Array.from(container.querySelectorAll('.msg-bubble'));
+    bubbles.sort((a, b) => {
+      const ta = messagesCache[a.dataset.id] ? new Date(messagesCache[a.dataset.id].created_at) : 0;
+      const tb = messagesCache[b.dataset.id] ? new Date(messagesCache[b.dataset.id].created_at) : 0;
+      return ta - tb;
+    });
+    bubbles.forEach((b) => container.appendChild(b));
+  }
+
+  function subscribeToMessages() {
+    if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
+
+    realtimeChannel = supabaseClient
+      .channel('tuitionhub_chat_' + currentUserId)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'tuitionhub_messages'
+      }, (payload) => {
+        const msg = payload.new;
+        const isRelevant =
+          (msg.sender_id === currentUserId && msg.receiver_id === otherUserId) ||
+          (msg.sender_id === otherUserId && msg.receiver_id === currentUserId);
+        if (!isRelevant) return;
+
+        const container = document.getElementById('chatMessages');
+        const emptyState = container.querySelector('.empty-state');
+        if (emptyState) container.innerHTML = '';
+        messagesCache[msg.id] = msg;
+        renderMessage(msg);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'tuitionhub_messages'
+      }, (payload) => {
+        const msg = payload.new;
+        const isRelevant =
+          (msg.sender_id === currentUserId && msg.receiver_id === otherUserId) ||
+          (msg.sender_id === otherUserId && msg.receiver_id === currentUserId);
+        if (!isRelevant) return;
+
+        messagesCache[msg.id] = msg;
+        const div = findMessageById(msg.id);
+        if (div) {
+          div.classList.toggle('deleted', !!msg.deleted_at);
+          fillMessageBubble(div, msg);
+          const isSent = msg.sender_id === currentUserId;
+          div.onclick = (isSent && !msg.deleted_at) ? () => openMsgActions(msg.id) : null;
+        }
+      })
+      .subscribe();
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const body = input.value.trim();
+    if (!body) return;
+
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = true;
+
+    const { data, error } = await supabaseClient
+      .from('tuitionhub_messages')
+      .insert({ sender_id: currentUserId, receiver_id: otherUserId, body: body })
+      .select()
+      .maybeSingle();
+
+    sendBtn.disabled = false;
+
+    if (error) {
+      alert('Message could not be sent. Please check your connection and try again.');
+      return;
+    }
+
+    input.value = '';
+    // Draw it right away — don't wait on the realtime channel, which can be
+    // dropped when the app is backgrounded or the connection is flaky.
+    if (data) {
+      messagesCache[data.id] = data;
+      renderMessage(data);
+    }
+  }
+
+  document.getElementById('messageInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  async function handleLogout() {
+    if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
+    await unsubscribeFromPush();
+    await supabaseClient.auth.signOut();
+    clearSavedCreds();
+    document.getElementById('chatScreen').style.display = 'none';
+    mainScreen.style.display = 'none';
+    loginScreen.style.display = 'flex';
+    phoneInput.value = '';
+    passwordInput.value = '';
+    errorMsg.textContent = '';
+  }
+
+  passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
+
+  // Restore session on reload — first try the live Supabase session,
+  // then fall back to silently signing in with saved credentials.
+  (async function checkSession() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session && session.user && session.user.email) {
+      const phone = emailToPhone(session.user.email);
+      showMainScreen(phone);
+      return;
+    }
+
+    const saved = getSavedCreds();
+    if (saved && saved.phone && saved.password) {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: phoneToEmail(saved.phone),
+        password: saved.password
+      });
+      if (!error) {
+        showMainScreen(saved.phone);
+      } else {
+        clearSavedCreds();
+      }
+    }
+  })();
+
+  // Register service worker for offline/installable PWA support
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch((err) => {
+        console.warn('Service worker registration failed:', err);
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
